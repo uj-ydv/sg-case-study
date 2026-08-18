@@ -4,7 +4,17 @@ This repository is a design scaffold for an internal AI application on Azure, co
 
 ---
 
-## Networking Approach
+## Architecture & Networking Approach
+
+**Edge layer.** Application Gateway holds the only public IP in the spoke, terminates TLS, and forwards to APIM.
+
+**API layer.** APIM runs in Internal VNet mode with no public gateway endpoint, applying auth, throttling, and routing before anything reaches the application.
+
+**Application layer.** The Linux Web App is private-endpoint inbound and VNet-integrated outbound, reachable only from APIM and never directly from the network.
+
+**AI layer.** AI Foundry and Azure Machine Learning are private-endpoint only with local auth disabled, called by the application layer and never by the edge.
+
+**Shared Services layer.** Storage and Cosmos DB are private-endpoint only with shared keys and local auth disabled, reachable only from the application and AI layers. Key Vault and Container Registry sit behind private endpoints and are consumed across every layer above via RBAC-scoped managed identity, never by key or connection string.
 
 User traffic enters via the Application Gateway (WAF) in the spoke, routes to APIM, and forwards to the App Service. The App Service, AI, and Data components communicate exclusively over the Microsoft backbone via Private Endpoints.
 
